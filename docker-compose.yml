@@ -1,0 +1,51 @@
+version: '3.9'
+
+services:
+  influxDb:
+    image: influxdb:2.5.1
+    env_file:
+      - .env
+    entrypoint: ["./entrypoint.sh"]
+    restart: on-failure:10
+    ports:
+      - ${DOCKER_INFLUXDB_INIT_PORT}:8086
+    networks:
+      - default
+
+  telegraf:
+    image: telegraf:1.19
+    volumes:
+      - ${TELEGRAF_CFG_PATH}:/etc/telegraf/telegraf.conf:rw
+    env_file:
+      - .env
+    networks:
+      - default
+  
+  grafana:
+    image: grafana/grafana-oss
+    volumes:
+      - grafana-storage:/var/lib/grafana:rw
+    ports:
+      - ${GRAFANA_PORT}:3000
+    networks:
+      - default
+  
+  mosquitto:
+    image: eclipse-mosquitto
+    restart: always
+    volumes:
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
+    ports:
+      - "9001:9001"
+      - "1883:1883"
+    networks:
+      - default
+
+volumes:
+  grafana-storage:
+  influxdb-storage:
+
+networks:
+  default:
+    name: monsterprologs
+    external: true
